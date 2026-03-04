@@ -1,0 +1,133 @@
+name: platform-adapter
+version: "1.0.0"
+description: >
+  adapts a single piece of content into platform-native versions for all 5 social
+  platforms. handles format constraints, tone adjustments, length optimization,
+  hashtag strategy, and platform-specific best practices for each platform.
+
+input_schema:
+  type: object
+  required: [source_content, source_platform, target_platforms]
+  properties:
+    source_content:
+      type: object
+      required: [text, topic, format]
+      properties:
+        text:
+          type: string
+          description: original post text
+        topic:
+          type: string
+        format:
+          type: string
+          enum: [image, video, carousel, reel, story, text]
+        media_available:
+          type: boolean
+          default: true
+    source_platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+      description: the platform this content was originally created for
+    target_platforms:
+      type: array
+      items:
+        type: string
+        enum: [facebook, instagram, twitter, tiktok, youtube]
+      description: platforms to adapt content for
+    user_style_profile:
+      type: object
+      description: per-platform style preferences
+    preserve_core_message:
+      type: boolean
+      default: true
+      description: preserve the core message while adapting format and style
+
+output_schema:
+  type: object
+  required: [adaptations]
+  properties:
+    adaptations:
+      type: object
+      description: keyed by platform name
+      additionalProperties:
+        type: object
+        properties:
+          platform:
+            type: string
+          adapted_text:
+            type: string
+          format:
+            type: string
+          character_count:
+            type: integer
+          adaptations_made:
+            type: array
+            items:
+              type: string
+            description: what was changed from the original
+          hashtags:
+            type: array
+            items:
+              type: string
+          media_recommendation:
+            type: string
+            description: what media format works best on this platform
+          platform_specific_tips:
+            type: array
+            items:
+              type: string
+          confidence:
+            type: number
+            minimum: 0
+            maximum: 1
+
+examples:
+  - input:
+      source_content:
+        text: "5am. coffee. journal. no phone.\n\nthe hour before the world wakes up is yours. guard it like your most important meeting - because it is.\n\nwhat does your first hour look like?"
+        topic: "morning routine for productivity"
+        format: "carousel"
+      source_platform: "instagram"
+      target_platforms: ["twitter", "facebook", "tiktok"]
+    output:
+      adaptations:
+        twitter:
+          platform: "twitter"
+          adapted_text: "5am. coffee. journal. no phone.\n\nthe hour before the world wakes up is yours.\n\nguard it like your most important meeting.\n\nbecause it is.\n\nwhat does your morning look like?"
+          format: "text"
+          character_count: 183
+          adaptations_made:
+            - "split into thread-style short paragraphs for twitter readability"
+            - "removed carousel reference"
+            - "reduced to core hook for twitter audience attention span"
+            - "reduced hashtag count to 0 (text tweets perform better without hashtags)"
+          hashtags: []
+          media_recommendation: "optional single image of journal/coffee aesthetic"
+          confidence: 0.91
+
+        facebook:
+          platform: "facebook"
+          adapted_text: "5am. coffee. journal. no phone.\n\nthe hour before the world wakes up is yours to own.\n\ni used to start my mornings reacting to other people's urgency - emails, notifications, news. then i changed one thing: i made the first 60 minutes belong entirely to me.\n\nno checking the phone. no starting with someone else's priorities.\n\njust space to think and set my own direction for the day.\n\nit changed everything.\n\nwhat does your first hour of the day look like? drop it in the comments - i read every one."
+          format: "image"
+          character_count: 487
+          adaptations_made:
+            - "expanded to longer-form narrative - facebook rewards depth and story"
+            - "added personal backstory for relatability"
+            - "explicit comment invitation for facebook algorithm boost"
+            - "warmer, more conversational tone for facebook audience"
+          hashtags: ["productivity", "morningroutine"]
+          confidence: 0.89
+
+        tiktok:
+          platform: "tiktok"
+          adapted_text: "5am. coffee. journal. no phone.\n\n(the 1 hour that changed my life)\n\nfull routine in comments"
+          format: "video"
+          character_count: 70
+          adaptations_made:
+            - "minimal caption - tiktok audiences watch video, not read captions"
+            - "hook optimized for first-frame text overlay"
+            - "curiosity gap with (the 1 hour that changed my life)"
+            - "drives to comments for algorithm signal"
+          hashtags: ["morningroutine", "productivity", "5amclub", "dayinmylife"]
+          media_recommendation: "video showing actual morning routine in real time with text overlays. 15-30 seconds. trending audio required."
+          confidence: 0.87

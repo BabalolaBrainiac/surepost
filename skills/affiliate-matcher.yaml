@@ -1,0 +1,82 @@
+name: affiliate-matcher
+version: "2.0.0"
+description: >
+  matches a post topic to the most relevant affiliate program. returns the best
+  product to integrate, the cta approach, estimated conversion potential,
+  and the required compliance disclosures.
+
+input_schema:
+  type: object
+  required: [post_topic, platform, content_goal]
+  properties:
+    post_topic:
+      type: string
+    platform:
+      type: string
+      enum: [instagram, tiktok, twitter, all]
+    content_goal:
+      type: string
+    follower_count:
+      type: integer
+      description: used to assess which affiliate programs are worth pursuing
+    existing_affiliate_links:
+      type: array
+      items:
+        type: string
+      description: programs already promoted this week (avoid repetition)
+
+output_schema:
+  type: object
+  required: [recommended_product, integration_approach, disclosure_required]
+  properties:
+    recommended_product:
+      type: object
+      properties:
+        name:
+          type: string
+        commission:
+          type: string
+        affiliate_link_placeholder:
+          type: string
+        why_relevant:
+          type: string
+    integration_approach:
+      type: string
+      description: how to naturally weave this product into the content
+    cta_text:
+      type: string
+      description: the specific call to action to use
+    conversion_potential:
+      type: number
+      minimum: 0
+      maximum: 1
+    disclosure_required:
+      type: object
+      properties:
+        text:
+          type: string
+          description: exact disclosure text to include
+        placement:
+          type: string
+          enum: [caption_start, caption_end, first_comment, video_description]
+    no_affiliate_recommended:
+      type: boolean
+      description: true if no natural affiliate fit exists for this post
+
+examples:
+  - input:
+      post_topic: "ai tools for writing instagram captions"
+      platform: "instagram"
+      content_goal: "conversions"
+    output:
+      recommended_product:
+        name: "Jasper AI"
+        commission: "30% recurring"
+        affiliate_link_placeholder: "[JASPER_AFFILIATE_LINK]"
+        why_relevant: "directly solves the problem the post discusses"
+      integration_approach: "after demonstrating the ai tip, mention jasper as the tool that does this automatically with a 7-day free trial"
+      cta_text: "try jasper free for 7 days — link in bio"
+      conversion_potential: 0.74
+      disclosure_required:
+        text: "#ad — i earn a commission if you sign up"
+        placement: "caption_end"

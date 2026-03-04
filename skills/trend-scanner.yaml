@@ -1,0 +1,78 @@
+name: trend-scanner
+version: "2.0.0"
+description: >
+  scans trending topics across instagram, tiktok, and twitter/x for a specific niche.
+  returns ranked trending opportunities with viral potential scores and content angles.
+
+input_schema:
+  type: object
+  required: [niche, platforms]
+  properties:
+    niche:
+      type: string
+      description: content niche to scan for (e.g., "ai x money")
+    platforms:
+      type: array
+      items:
+        type: string
+        enum: [instagram, tiktok, twitter, all]
+    lookback_hours:
+      type: integer
+      default: 24
+    max_results:
+      type: integer
+      default: 10
+
+output_schema:
+  type: object
+  required: [opportunities, timestamp]
+  properties:
+    timestamp:
+      type: string
+      format: date-time
+    opportunities:
+      type: array
+      items:
+        type: object
+        required: [topic, viral_potential, best_platform, best_format, hook_angle]
+        properties:
+          topic:
+            type: string
+          why_trending:
+            type: string
+          viral_potential:
+            type: number
+            minimum: 0
+            maximum: 1
+          trend_stage:
+            type: string
+            enum: [emerging, rising, peak, declining]
+            description: emerging is most valuable - get there before competitors
+          best_platform:
+            type: string
+          best_format:
+            type: string
+          hook_angle:
+            type: string
+          affiliate_opportunity:
+            type: string
+          confidence:
+            type: number
+
+examples:
+  - input:
+      niche: "ai x money"
+      platforms: ["all"]
+      lookback_hours: 24
+    output:
+      timestamp: "2026-03-02T06:00:00Z"
+      opportunities:
+        - topic: "new ai tool that automates [task]"
+          why_trending: "just launched, product hunt #1, tech twitter discussing"
+          viral_potential: 0.87
+          trend_stage: "emerging"
+          best_platform: "tiktok"
+          best_format: "demo video 30-45 seconds"
+          hook_angle: "i tried the ai tool everyone is talking about. here is what happened."
+          affiliate_opportunity: "check if tool has affiliate program"
+          confidence: 0.91

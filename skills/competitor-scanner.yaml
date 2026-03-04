@@ -1,0 +1,212 @@
+name: competitor-scanner
+version: "2.0.0"
+description: >
+  scans the top-performing posts from competitor accounts in the ai x money niche.
+  identifies what content formats, hooks, topics, and posting frequencies are
+  generating the most engagement. extracts actionable intelligence without copying —
+  the goal is to understand what is working and produce original content that
+  competes at the same level or higher.
+
+input_schema:
+  type: object
+  required: [platform, niche]
+  properties:
+    platform:
+      type: string
+      enum: [instagram, tiktok, twitter, all]
+    niche:
+      type: string
+      default: "ai x money"
+    competitor_accounts:
+      type: array
+      items:
+        type: string
+      description: >
+        list of competitor account handles to scan. if not provided,
+        uses the default monitored list for the niche.
+      default:
+        tiktok:
+          - "@aiadvantage"
+          - "@thefuturist_"
+          - "@natiaishvili"
+          - "@heyjasmine"
+          - "@buildspace"
+          - "@levelsio"
+          - "@thepatronsaint"
+          - "@sidehustlenation"
+          - "@moneywithmakena"
+          - "@aimoneymakers"
+        instagram:
+          - "@ai.explained"
+          - "@artificial.intelligence.hub"
+          - "@thefuturist"
+          - "@techmoneymaker"
+          - "@aitools.daily"
+          - "@sidehustle.school"
+          - "@moneymindsetcoach"
+          - "@passive.income.unlocked"
+          - "@makemoneywith.ai"
+          - "@creatoreconomy.co"
+        twitter:
+          - "@levelsio"
+          - "@swyx"
+          - "@gregisenberg"
+          - "@jdnoc"
+          - "@heykahn"
+          - "@thedankoe"
+          - "@naval"
+          - "@nivi"
+          - "@justinwelsh"
+          - "@dickiebush"
+    scan_depth:
+      type: string
+      enum: [last_7_posts, last_30_posts, top_performers]
+      default: last_7_posts
+    metrics_to_extract:
+      type: array
+      items:
+        type: string
+        enum: [views, likes, saves, shares, comments, engagement_rate, posting_frequency]
+      default: [views, likes, saves, shares, engagement_rate, posting_frequency]
+
+output_schema:
+  type: object
+  required: [platform, scan_date, top_performers, niche_trends, strategic_gaps]
+  properties:
+    platform:
+      type: string
+    scan_date:
+      type: string
+      format: date
+    top_performers:
+      type: array
+      description: top 5 posts across all scanned accounts
+      items:
+        type: object
+        properties:
+          account: { type: string }
+          post_type: { type: string }
+          hook_text: { type: string }
+          hook_type: { type: string }
+          topic: { type: string }
+          views_or_reach: { type: integer }
+          engagement_rate: { type: number }
+          posted_at: { type: string }
+          what_made_it_work: { type: string }
+    niche_trends:
+      type: object
+      properties:
+        top_topics:
+          type: array
+          items:
+            type: object
+            properties:
+              topic: { type: string }
+              frequency: { type: integer }
+              avg_engagement_rate: { type: number }
+        top_formats:
+          type: array
+          items:
+            type: object
+            properties:
+              format: { type: string }
+              frequency: { type: integer }
+              avg_reach: { type: number }
+        top_hook_types:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string }
+              frequency: { type: integer }
+              avg_score: { type: number }
+        avg_posting_frequency_per_day:
+          type: number
+        peak_posting_hours_utc:
+          type: array
+          items:
+            type: integer
+    strategic_gaps:
+      type: array
+      description: content angles or topics no one is covering well — opportunity areas
+      items:
+        type: object
+        properties:
+          gap: { type: string }
+          opportunity_score:
+            type: number
+            minimum: 0
+            maximum: 1
+          rationale: { type: string }
+    competitor_posting_schedule:
+      type: object
+      description: when competitors are posting (to find less contested windows)
+      additionalProperties:
+        type: array
+        items:
+          type: integer
+
+examples:
+  - input:
+      platform: "tiktok"
+      niche: "ai x money"
+      scan_depth: "last_7_posts"
+    output:
+      platform: "tiktok"
+      scan_date: "2026-03-02"
+      top_performers:
+        - account: "@aiadvantage"
+          post_type: "video"
+          hook_text: "this free ai tool just made me $3,200 in one week."
+          hook_type: "bold_claim"
+          topic: "ai tools for passive income"
+          views_or_reach: 2400000
+          engagement_rate: 0.071
+          posted_at: "2026-02-28T20:00:00Z"
+          what_made_it_work: "specific dollar amount + free + time constraint (1 week) = extreme curiosity. viewers needed to watch to verify the claim."
+        - account: "@thefuturist_"
+          post_type: "video"
+          hook_text: "openai just changed everything. here is what no one is telling you."
+          hook_type: "curiosity_gap"
+          topic: "openai o3 release analysis"
+          views_or_reach: 1800000
+          engagement_rate: 0.059
+          posted_at: "2026-02-27T19:30:00Z"
+          what_made_it_work: "timely news event + exclusive angle ('no one is telling you') drives shares from people who want to be first to share it"
+      niche_trends:
+        top_topics:
+          - topic: "free ai tools for income"
+            frequency: 14
+            avg_engagement_rate: 0.068
+          - topic: "chatgpt money making"
+            frequency: 11
+            avg_engagement_rate: 0.054
+          - topic: "side hustle automation with ai"
+            frequency: 9
+            avg_engagement_rate: 0.061
+        top_formats:
+          - format: "video"
+            frequency: 38
+            avg_reach: 245000
+          - format: "carousel"
+            frequency: 12
+            avg_reach: 89000
+        top_hook_types:
+          - type: "bold_claim"
+            frequency: 22
+            avg_score: 0.89
+          - type: "curiosity_gap"
+            frequency: 18
+            avg_score: 0.85
+        avg_posting_frequency_per_day: 1.4
+        peak_posting_hours_utc: [19, 20, 21]
+      strategic_gaps:
+        - gap: "step-by-step ai affiliate setup tutorials — most accounts claim income but never show the setup"
+          opportunity_score: 0.88
+          rationale: "high search intent, low competition, directly converts viewers to affiliate sign-ups"
+        - gap: "ai tool failures and honest reviews — all competitors only show wins"
+          opportunity_score: 0.79
+          rationale: "authenticity builds trust faster than hype. honest content gets shared more and builds loyal audience"
+      competitor_posting_schedule:
+        "@aiadvantage": [20, 21]
+        "@thefuturist_": [19, 20]

@@ -1,0 +1,111 @@
+name: content-performance-scorer
+version: "1.0.0"
+description: >
+  scores a user's historical post performance to identify patterns in what content
+  performs best. produces a performance matrix that informs all future ai recommendations.
+
+input_schema:
+  type: object
+  required: [user_id, platform, post_history]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+    post_history:
+      type: array
+      minItems: 5
+      items:
+        type: object
+        required: [post_id, posted_at, metrics]
+        properties:
+          post_id:
+            type: string
+          posted_at:
+            type: string
+            format: date-time
+          content_text:
+            type: string
+          media_type:
+            type: string
+          hashtags:
+            type: array
+            items:
+              type: string
+          metrics:
+            type: object
+            properties:
+              engagement_rate:
+                type: number
+              reach:
+                type: integer
+              impressions:
+                type: integer
+              likes:
+                type: integer
+              comments:
+                type: integer
+              shares:
+                type: integer
+              saves:
+                type: integer
+
+output_schema:
+  type: object
+  required: [performance_matrix, confidence]
+  properties:
+    performance_matrix:
+      type: object
+      properties:
+        by_content_type:
+          type: object
+          description: performance breakdown by image/video/carousel/reel/etc
+        by_posting_hour:
+          type: object
+          description: performance indexed by hour of day
+        by_day_of_week:
+          type: object
+          description: performance indexed by day of week
+        by_caption_length:
+          type: object
+          properties:
+            short:
+              type: object
+            medium:
+              type: object
+            long:
+              type: object
+        by_hashtag_count:
+          type: object
+        top_topics:
+          type: array
+          items:
+            type: object
+            properties:
+              topic:
+                type: string
+              avg_engagement_rate:
+                type: number
+              post_count:
+                type: integer
+        account_benchmarks:
+          type: object
+          properties:
+            avg_engagement_rate:
+              type: number
+            avg_reach:
+              type: number
+            best_performing_format:
+              type: string
+            worst_performing_format:
+              type: string
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+    posts_analyzed:
+      type: integer
+    analysis_period_days:
+      type: integer

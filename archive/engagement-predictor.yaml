@@ -1,0 +1,162 @@
+name: engagement-predictor
+version: "1.0.0"
+description: >
+  predicts the engagement rate and reach of a post before it is published.
+  uses multi-signal ensemble model combining content features, timing, hashtags,
+  historical performance, and platform algorithm patterns. minimum 95% confidence
+  required for high-confidence label.
+
+input_schema:
+  type: object
+  required: [user_id, platform, post_features]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+    post_features:
+      type: object
+      required: [content_text, media_type, posting_time]
+      properties:
+        content_text:
+          type: string
+        media_type:
+          type: string
+          enum: [image, video, carousel, reel, story, text, short]
+        posting_time:
+          type: string
+          format: date-time
+        hashtags:
+          type: array
+          items:
+            type: string
+        caption_length:
+          type: integer
+        has_question:
+          type: boolean
+        has_cta:
+          type: boolean
+        sentiment:
+          type: string
+          enum: [positive, neutral, negative, mixed]
+        time_slot_quality_score:
+          type: number
+          description: from optimal-time-calculator output
+    historical_context:
+      type: object
+      description: user's historical performance stats for calibration
+      properties:
+        avg_engagement_rate:
+          type: number
+        avg_reach:
+          type: integer
+        follower_count:
+          type: integer
+        account_age_days:
+          type: integer
+        posts_last_30_days:
+          type: integer
+
+output_schema:
+  type: object
+  required: [predicted_engagement_rate, predicted_reach, confidence_score, confidence_label]
+  properties:
+    predicted_engagement_rate:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: predicted engagement rate (likes+comments+shares / reach)
+    predicted_reach:
+      type: object
+      properties:
+        point_estimate:
+          type: integer
+        lower_bound:
+          type: integer
+          description: 90% confidence interval lower bound
+        upper_bound:
+          type: integer
+          description: 90% confidence interval upper bound
+    predicted_impressions:
+      type: integer
+    predicted_likes:
+      type: integer
+    predicted_comments:
+      type: integer
+    predicted_shares:
+      type: integer
+    engagement_vs_account_avg:
+      type: number
+      description: multiplier vs user's account average (1.5 = 50% above average)
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+    confidence_label:
+      type: string
+      enum: [high, medium, low]
+      description: high >= 0.95, medium >= 0.80, low < 0.80
+    signal_contributions:
+      type: object
+      description: how much each signal contributed to prediction
+      properties:
+        historical_performance:
+          type: number
+        posting_time_quality:
+          type: number
+        content_features:
+          type: number
+        hashtag_quality:
+          type: number
+        platform_algorithm:
+          type: number
+    improvement_suggestions:
+      type: array
+      items:
+        type: object
+        properties:
+          change:
+            type: string
+          predicted_improvement:
+            type: string
+
+examples:
+  - input:
+      user_id: "550e8400-e29b-41d4-a716-446655440000"
+      platform: "instagram"
+      post_features:
+        content_text: "5am. coffee. journal. no phone..."
+        media_type: "carousel"
+        posting_time: "2026-03-04T17:00:00-05:00"
+        hashtags: ["productivity", "morningroutine", "5amclub"]
+        caption_length: 287
+        has_question: true
+        has_cta: true
+        sentiment: "positive"
+        time_slot_quality_score: 0.94
+      historical_context:
+        avg_engagement_rate: 0.038
+        avg_reach: 12000
+        follower_count: 45000
+        account_age_days: 540
+    output:
+      predicted_engagement_rate: 0.062
+      predicted_reach:
+        point_estimate: 18400
+        lower_bound: 14200
+        upper_bound: 24800
+      predicted_impressions: 21000
+      predicted_likes: 890
+      predicted_comments: 72
+      predicted_shares: 180
+      engagement_vs_account_avg: 1.63
+      confidence_score: 0.96
+      confidence_label: "high"
+      signal_contributions:
+        historical_performance: 0.30
+        posting_time_quality: 0.25
+        content_features: 0.22
+        hashtag_quality: 0.13
+        platform_algorithm: 0.10

@@ -1,0 +1,139 @@
+name: content-generator
+version: "1.0.0"
+description: >
+  generates platform-native post content that precisely matches the user's voice,
+  tone, and style. uses user's content style profile, trending topics, and ai
+  content brief to produce posts that are indistinguishable from the user's own writing.
+
+input_schema:
+  type: object
+  required: [user_id, platform, content_style_profile, content_brief]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+    content_style_profile:
+      type: object
+      description: output from social-profile-analyzer
+      properties:
+        tone:
+          type: string
+        avg_caption_length:
+          type: integer
+        emoji_usage:
+          type: string
+        cta_style:
+          type: string
+        question_frequency:
+          type: number
+        best_performing_format:
+          type: string
+    content_brief:
+      type: object
+      required: [topic, content_goal]
+      properties:
+        topic:
+          type: string
+          description: what the post should be about
+        content_goal:
+          type: string
+          enum: [engagement, reach, conversions, brand_awareness, community_building]
+        trending_topics:
+          type: array
+          items:
+            type: string
+          description: relevant trending topics to integrate
+        product_or_service:
+          type: string
+          description: optional product/service to reference
+        niche:
+          type: string
+    variations:
+      type: integer
+      minimum: 1
+      maximum: 3
+      default: 1
+      description: number of content variations to generate
+    include_hashtag_placeholders:
+      type: boolean
+      default: true
+      description: include [HASHTAGS_HERE] placeholder for hashtag skill
+
+output_schema:
+  type: object
+  required: [primary_content, platform, confidence]
+  properties:
+    primary_content:
+      type: object
+      required: [text, format, hook, cta]
+      properties:
+        text:
+          type: string
+          description: the full post text ready to publish
+        format:
+          type: string
+          enum: [image, video, carousel, reel, story, text, short]
+        hook:
+          type: string
+          description: first line / hook of the post
+        cta:
+          type: string
+          description: call to action used
+        hashtag_placeholder:
+          type: string
+          description: where hashtags should be inserted
+        character_count:
+          type: integer
+        estimated_read_time_seconds:
+          type: integer
+    variations:
+      type: array
+      items:
+        type: object
+        properties:
+          text:
+            type: string
+          variation_angle:
+            type: string
+            description: what is different about this variation
+    platform_rules_applied:
+      type: array
+      items:
+        type: string
+      description: list of platform rules enforced in this content
+    voice_match_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: how well this matches the user's established voice
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+
+examples:
+  - input:
+      user_id: "550e8400-e29b-41d4-a716-446655440000"
+      platform: "instagram"
+      content_style_profile:
+        tone: "inspirational"
+        avg_caption_length: 145
+        emoji_usage: "moderate"
+        cta_style: "question"
+        question_frequency: 0.65
+      content_brief:
+        topic: "morning routine for productivity"
+        content_goal: "engagement"
+        niche: "personal development"
+    output:
+      primary_content:
+        text: "5am. coffee. journal. no phone.\n\nthe hour before the world wakes up is yours. guard it like your most important meeting - because it is.\n\nmy morning changed when i stopped treating the first 60 minutes as prep for someone else's agenda.\n\nwhat does your first hour look like? [HASHTAGS_HERE]"
+        format: "image"
+        hook: "5am. coffee. journal. no phone."
+        cta: "what does your first hour look like?"
+        character_count: 287
+      voice_match_score: 0.93
+      confidence: 0.94

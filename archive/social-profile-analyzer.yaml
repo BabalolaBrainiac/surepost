@@ -1,0 +1,167 @@
+name: social-profile-analyzer
+version: "1.0.0"
+description: >
+  analyzes a connected social media account's full profile, post history, and
+  audience data to produce a comprehensive profile audit with health scores,
+  content style classification, and improvement recommendations.
+
+input_schema:
+  type: object
+  required: [user_id, platform, account_data]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: surepost user identifier
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+    account_data:
+      type: object
+      description: raw data from platform api
+      properties:
+        profile:
+          type: object
+          description: account profile fields from platform api
+        post_history:
+          type: array
+          items:
+            type: object
+          description: last 90 days of posts with metrics
+        audience_insights:
+          type: object
+          description: follower demographics and active hours
+        follower_count:
+          type: integer
+        following_count:
+          type: integer
+    analysis_depth:
+      type: string
+      enum: [quick, standard, deep]
+      default: standard
+      description: quick = last 30 days, standard = 90 days, deep = 180 days
+
+output_schema:
+  type: object
+  required: [profile_health_score, content_style_profile, audience_profile, confidence]
+  properties:
+    profile_health_score:
+      type: number
+      minimum: 0
+      maximum: 100
+      description: overall account health score
+    content_style_profile:
+      type: object
+      properties:
+        tone:
+          type: string
+          enum: [professional, casual, humor, inspirational, educational, promotional, mixed]
+        avg_caption_length:
+          type: integer
+        emoji_usage:
+          type: string
+          enum: [none, minimal, moderate, heavy]
+        cta_style:
+          type: string
+        question_frequency:
+          type: number
+        best_performing_format:
+          type: string
+          enum: [image, video, carousel, reel, story, text]
+    audience_profile:
+      type: object
+      properties:
+        primary_timezone:
+          type: string
+        active_hours_heatmap:
+          type: array
+          description: 7x24 matrix of relative audience activity (0-1)
+        top_demographics:
+          type: object
+        peak_engagement_slots:
+          type: array
+          items:
+            type: object
+            properties:
+              day_of_week:
+                type: integer
+                minimum: 0
+                maximum: 6
+              hour:
+                type: integer
+                minimum: 0
+                maximum: 23
+              relative_score:
+                type: number
+    top_performing_content:
+      type: array
+      maxItems: 5
+      items:
+        type: object
+        properties:
+          post_id:
+            type: string
+          engagement_rate:
+            type: number
+          content_type:
+            type: string
+          key_attributes:
+            type: array
+            items:
+              type: string
+    growth_trajectory:
+      type: string
+      enum: [accelerating, stable, slowing, declining]
+    improvement_areas:
+      type: array
+      items:
+        type: object
+        properties:
+          area:
+            type: string
+          priority:
+            type: string
+            enum: [high, medium, low]
+          recommendation:
+            type: string
+    data_completeness_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: how complete was the input data (affects confidence)
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: confidence in the analysis accuracy
+
+examples:
+  - input:
+      user_id: "550e8400-e29b-41d4-a716-446655440000"
+      platform: "instagram"
+      account_data:
+        follower_count: 45000
+        post_history: []
+        audience_insights: {}
+      analysis_depth: "standard"
+    output:
+      profile_health_score: 72
+      content_style_profile:
+        tone: "inspirational"
+        avg_caption_length: 145
+        emoji_usage: "moderate"
+        cta_style: "question"
+        question_frequency: 0.65
+        best_performing_format: "carousel"
+      audience_profile:
+        primary_timezone: "America/New_York"
+        peak_engagement_slots:
+          - day_of_week: 2
+            hour: 17
+            relative_score: 0.94
+          - day_of_week: 4
+            hour: 12
+            relative_score: 0.91
+      growth_trajectory: "stable"
+      data_completeness_score: 0.85
+      confidence: 0.91

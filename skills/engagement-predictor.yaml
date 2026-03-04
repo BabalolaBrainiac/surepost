@@ -1,0 +1,212 @@
+name: engagement-predictor
+version: "2.0.0"
+description: >
+  predicts engagement metrics for a post before it is published.
+  uses hook strength, format, topic trend velocity, posting time,
+  and historical account performance to estimate reach, views, likes,
+  saves, shares, comments, and affiliate click-through rate.
+  output is used by the quality gate agent to decide if a post is ready.
+
+input_schema:
+  type: object
+  required: [platform, format, hook, topic, scheduled_time_utc]
+  properties:
+    platform:
+      type: string
+      enum: [instagram, tiktok, twitter]
+    format:
+      type: string
+      enum: [video, reel, carousel, caption, thread, tweet, story]
+    hook:
+      type: object
+      required: [text, score]
+      properties:
+        text: { type: string }
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        type:
+          type: string
+          enum: [curiosity_gap, bold_claim, personal_story, counter_intuitive, list_promise, question]
+    topic:
+      type: string
+    trend_velocity:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: trending score from trend-scanner skill (0 = cold, 1 = peak viral)
+    scheduled_time_utc:
+      type: string
+      format: date-time
+    account_metrics:
+      type: object
+      properties:
+        followers: { type: integer }
+        avg_reach_last_7_posts: { type: integer }
+        avg_engagement_rate_last_7_posts: { type: number }
+        avg_views_last_7_posts: { type: integer }
+    has_affiliate_cta:
+      type: boolean
+      default: false
+    content_goal:
+      type: string
+      enum: [reach, saves, shares, engagement, conversions, affiliate]
+
+output_schema:
+  type: object
+  required: [predictions, overall_confidence, post_grade]
+  properties:
+    predictions:
+      type: object
+      properties:
+        reach:
+          type: object
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        views:
+          type: object
+          description: tiktok only
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        likes:
+          type: object
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        saves:
+          type: object
+          description: instagram / tiktok bookmarks
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        shares:
+          type: object
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        comments:
+          type: object
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        affiliate_clicks:
+          type: object
+          description: estimated clicks if has_affiliate_cta is true
+          properties:
+            low: { type: integer }
+            mid: { type: integer }
+            high: { type: integer }
+        estimated_affiliate_revenue:
+          type: object
+          properties:
+            low: { type: number }
+            mid: { type: number }
+            high: { type: number }
+        engagement_rate:
+          type: number
+          description: predicted engagement rate (interactions / reach)
+    overall_confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+    post_grade:
+      type: string
+      enum: [S, A, B, C, F]
+      description: S = top 5% predicted, A = top 20%, B = average, C = below average, F = should not post
+    improvement_suggestions:
+      type: array
+      items:
+        type: string
+      description: specific changes to improve predicted performance
+    viral_probability:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: probability of reaching 10x average account reach
+
+grade_thresholds:
+  S:
+    engagement_rate_min: 0.08
+    reach_multiplier_min: 3.0
+    description: "viral candidate — prioritize and repurpose across platforms"
+  A:
+    engagement_rate_min: 0.05
+    reach_multiplier_min: 1.8
+    description: "strong performer — publish as scheduled"
+  B:
+    engagement_rate_min: 0.03
+    reach_multiplier_min: 1.0
+    description: "average — acceptable to publish"
+  C:
+    engagement_rate_min: 0.015
+    reach_multiplier_min: 0.6
+    description: "below average — revise hook before publishing"
+  F:
+    engagement_rate_min: 0
+    reach_multiplier_min: 0
+    description: "do not publish — regenerate content"
+
+examples:
+  - input:
+      platform: "tiktok"
+      format: "video"
+      hook:
+        text: "i replaced my $500/month software stack with these 5 free ai tools."
+        score: 0.92
+        type: "bold_claim"
+      topic: "5 free ai tools for creators"
+      trend_velocity: 0.78
+      scheduled_time_utc: "2026-03-03T20:00:00Z"
+      account_metrics:
+        followers: 12000
+        avg_reach_last_7_posts: 18500
+        avg_engagement_rate_last_7_posts: 0.047
+        avg_views_last_7_posts: 22000
+      has_affiliate_cta: true
+      content_goal: "affiliate"
+    output:
+      predictions:
+        views:
+          low: 28000
+          mid: 67000
+          high: 210000
+        likes:
+          low: 1200
+          mid: 3100
+          high: 9800
+        saves:
+          low: 340
+          mid: 890
+          high: 2800
+        shares:
+          low: 180
+          mid: 470
+          high: 1500
+        comments:
+          low: 95
+          mid: 240
+          high: 760
+        affiliate_clicks:
+          low: 85
+          mid: 210
+          high: 680
+        estimated_affiliate_revenue:
+          low: 42.50
+          mid: 105.00
+          high: 340.00
+        engagement_rate: 0.062
+      overall_confidence: 0.81
+      post_grade: "A"
+      improvement_suggestions:
+        - "add a mid-video hook at 8-10 seconds to retain viewers past the algorithm's first drop-off"
+        - "pin a comment within 30 minutes of posting to boost comment velocity"
+      viral_probability: 0.23

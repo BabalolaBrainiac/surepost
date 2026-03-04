@@ -1,0 +1,123 @@
+name: optimal-time-calculator
+version: "1.0.0"
+description: >
+  calculates the optimal posting times for a user on a specific platform using
+  audience activity heatmaps, historical engagement correlation, platform algorithm
+  patterns, and content type timing affinity. returns ranked time slots with confidence.
+
+input_schema:
+  type: object
+  required: [user_id, platform]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+    content_type:
+      type: string
+      enum: [image, video, carousel, reel, story, text, short]
+      description: different content types have different peak performance times
+    target_date:
+      type: string
+      format: date
+      description: specific date to optimize for (default is next 7 days)
+    slots_requested:
+      type: integer
+      minimum: 1
+      maximum: 10
+      default: 5
+    audience_timezone:
+      type: string
+      description: primary audience timezone (auto-detected from profile if not provided)
+
+output_schema:
+  type: object
+  required: [optimal_slots, confidence, reasoning]
+  properties:
+    optimal_slots:
+      type: array
+      minItems: 1
+      maxItems: 10
+      items:
+        type: object
+        required: [datetime, confidence, expected_engagement_multiplier]
+        properties:
+          datetime:
+            type: string
+            format: date-time
+            description: exact datetime to post (user's primary audience timezone)
+          day_of_week:
+            type: string
+          hour_local:
+            type: integer
+          confidence:
+            type: number
+            minimum: 0
+            maximum: 1
+          expected_engagement_multiplier:
+            type: number
+            description: multiplier vs average (1.0 = average, 1.5 = 50% above average)
+          slot_quality:
+            type: string
+            enum: [excellent, good, average, poor]
+          reasoning:
+            type: string
+    signals_used:
+      type: object
+      properties:
+        historical_data_available:
+          type: boolean
+        days_of_data:
+          type: integer
+        audience_timezone_confidence:
+          type: number
+        platform_baseline_used:
+          type: boolean
+          description: true if not enough user data (cold start)
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+    data_source:
+      type: string
+      enum: [user_historical, platform_benchmark, hybrid]
+      description: whether this is based on user's own data or platform benchmarks
+
+examples:
+  - input:
+      user_id: "550e8400-e29b-41d4-a716-446655440000"
+      platform: "instagram"
+      content_type: "reel"
+      slots_requested: 3
+    output:
+      optimal_slots:
+        - datetime: "2026-03-04T17:00:00-05:00"
+          day_of_week: "Wednesday"
+          hour_local: 17
+          confidence: 0.94
+          expected_engagement_multiplier: 1.62
+          slot_quality: "excellent"
+          reasoning: "peak audience activity. historically 62% above average engagement for reels at this time"
+        - datetime: "2026-03-05T12:30:00-05:00"
+          day_of_week: "Thursday"
+          hour_local: 12
+          confidence: 0.89
+          expected_engagement_multiplier: 1.41
+          slot_quality: "good"
+          reasoning: "lunch hour engagement spike. strong reel performance thursday midday"
+        - datetime: "2026-03-06T19:00:00-05:00"
+          day_of_week: "Friday"
+          hour_local: 19
+          confidence: 0.85
+          expected_engagement_multiplier: 1.28
+          slot_quality: "good"
+          reasoning: "friday evening scroll time. audience disengages from work"
+      signals_used:
+        historical_data_available: true
+        days_of_data: 87
+        audience_timezone_confidence: 0.91
+        platform_baseline_used: false
+      confidence: 0.94
+      data_source: "user_historical"

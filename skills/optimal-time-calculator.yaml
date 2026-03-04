@@ -1,0 +1,154 @@
+name: optimal-time-calculator
+version: "2.0.0"
+description: >
+  calculates the optimal posting time for each platform and content type
+  based on historical engagement data, audience timezone distribution,
+  platform algorithm behavior, and competitor posting patterns.
+  returns a ranked list of time windows with predicted reach multipliers.
+
+input_schema:
+  type: object
+  required: [platform, format, content_goal]
+  properties:
+    platform:
+      type: string
+      enum: [instagram, tiktok, twitter]
+    format:
+      type: string
+      enum: [video, reel, carousel, caption, thread, tweet, story]
+    content_goal:
+      type: string
+      enum: [reach, saves, shares, engagement, conversions, affiliate]
+    account_analytics:
+      type: object
+      description: historical performance data for this account
+      properties:
+        top_performing_hours:
+          type: array
+          items:
+            type: object
+            properties:
+              hour_utc: { type: integer }
+              avg_reach: { type: number }
+              avg_engagement_rate: { type: number }
+        audience_timezones:
+          type: object
+          description: percentage distribution by timezone
+          additionalProperties:
+            type: number
+        recent_posts:
+          type: array
+          items:
+            type: object
+            properties:
+              posted_at_utc: { type: string }
+              reach: { type: integer }
+              engagement_rate: { type: number }
+    date:
+      type: string
+      format: date
+      description: the target posting date (defaults to today)
+    avoid_hours_utc:
+      type: array
+      items:
+        type: integer
+      description: hours to exclude (e.g. if another post is already scheduled)
+
+output_schema:
+  type: object
+  required: [recommended_time_utc, time_windows, reasoning]
+  properties:
+    recommended_time_utc:
+      type: string
+      format: date-time
+      description: single best posting time
+    time_windows:
+      type: array
+      minItems: 3
+      maxItems: 5
+      items:
+        type: object
+        required: [time_utc, reach_multiplier, confidence]
+        properties:
+          time_utc:
+            type: string
+            format: date-time
+          reach_multiplier:
+            type: number
+            description: predicted reach vs account average (1.0 = average, 1.5 = 50% better)
+          confidence:
+            type: number
+            minimum: 0
+            maximum: 1
+          reason:
+            type: string
+          audience_online_pct:
+            type: number
+            description: estimated percentage of audience active at this time
+    reasoning:
+      type: string
+      description: explanation of the recommendation
+    platform_peak_hours_utc:
+      type: array
+      items:
+        type: integer
+      description: general platform peak hours used as baseline
+
+platform_baselines:
+  instagram:
+    peak_hours_utc: [11, 12, 13, 17, 18, 19, 20]
+    best_days: [tuesday, wednesday, thursday]
+    reel_specific_peak: [19, 20, 21]
+    carousel_specific_peak: [11, 12, 17, 18]
+    avoid_hours: [0, 1, 2, 3, 4, 5]
+    algorithm_notes: >
+      instagram rewards early engagement velocity. posting when audience is
+      active in first 30 minutes dramatically increases distribution. avoid
+      competing with major us prime time on highly saturated niches.
+
+  tiktok:
+    peak_hours_utc: [12, 13, 19, 20, 21, 22, 23]
+    best_days: [tuesday, thursday, friday]
+    avoid_hours: [5, 6, 7]
+    algorithm_notes: >
+      tiktok distributes content at any time — algorithm tests with small
+      cohort first. but posting during high-traffic hours means more users
+      in the initial test pool, leading to faster velocity signals.
+      for viral content, 19:00–22:00 utc gives widest us + europe overlap.
+
+  twitter:
+    peak_hours_utc: [9, 10, 11, 12, 13, 14, 17, 18]
+    best_days: [tuesday, wednesday, thursday]
+    thread_peak: [9, 10, 11]
+    avoid_hours: [0, 1, 2, 3, 4, 22, 23]
+    algorithm_notes: >
+      twitter engagement is front-loaded. tweets age fast. post at the start
+      of us business day east coast (13:00–14:00 utc) for maximum retweet
+      velocity. threads perform better in morning commute window (13:00–15:00 utc).
+
+examples:
+  - input:
+      platform: "tiktok"
+      format: "video"
+      content_goal: "reach"
+      date: "2026-03-03"
+    output:
+      recommended_time_utc: "2026-03-03T20:00:00Z"
+      time_windows:
+        - time_utc: "2026-03-03T20:00:00Z"
+          reach_multiplier: 1.62
+          confidence: 0.87
+          reason: "us east coast prime time overlap with uk evening — widest ai niche audience window"
+          audience_online_pct: 0.43
+        - time_utc: "2026-03-03T13:00:00Z"
+          reach_multiplier: 1.34
+          confidence: 0.79
+          reason: "us lunch hour — high scroll activity, lower competition than evening"
+          audience_online_pct: 0.31
+        - time_utc: "2026-03-03T22:00:00Z"
+          reach_multiplier: 1.21
+          confidence: 0.71
+          reason: "late us evening second scroll — good for affiliate link clicks"
+          audience_online_pct: 0.29
+      reasoning: "tiktok ai niche audience is predominantly 18-34 us-based. 20:00 utc = 3pm-8pm across us timezones. combines highest audience density with tiktok algorithm prime distribution window."
+      platform_peak_hours_utc: [12, 13, 19, 20, 21, 22, 23]

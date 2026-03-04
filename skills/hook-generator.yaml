@@ -1,0 +1,78 @@
+name: hook-generator
+version: "2.0.0"
+description: >
+  generates 3 high-converting hook variations for a given post topic and platform.
+  scores each hook and selects the strongest. hooks are the single most important
+  element of social media content — a weak hook = zero reach.
+
+input_schema:
+  type: object
+  required: [topic, platform, format]
+  properties:
+    topic:
+      type: string
+    platform:
+      type: string
+      enum: [tiktok, instagram, twitter, facebook]
+    format:
+      type: string
+      enum: [video, carousel, single_image, thread, tweet]
+    content_goal:
+      type: string
+      enum: [reach, saves, shares, engagement, conversions]
+      default: reach
+    niche:
+      type: string
+      default: "ai x money"
+
+output_schema:
+  type: object
+  required: [hooks, recommended_hook]
+  properties:
+    hooks:
+      type: array
+      minItems: 3
+      maxItems: 3
+      items:
+        type: object
+        required: [text, type, score]
+        properties:
+          text:
+            type: string
+          type:
+            type: string
+            enum: [curiosity_gap, bold_claim, personal_story, counter_intuitive, list_promise, question]
+          score:
+            type: number
+            minimum: 0
+            maximum: 1
+          why_it_works:
+            type: string
+    recommended_hook:
+      type: object
+      description: the highest-scoring hook
+
+examples:
+  - input:
+      topic: "5 free ai tools that help you make money"
+      platform: "tiktok"
+      format: "video"
+      content_goal: "reach"
+    output:
+      hooks:
+        - text: "i replaced my $500/month software stack with these 5 free ai tools."
+          type: "bold_claim"
+          score: 0.92
+          why_it_works: "specific dollar amount + free = instant attention. challenges assumption that good tools cost money."
+        - text: "the free ai tools that paid creators are hiding from you."
+          type: "curiosity_gap"
+          score: 0.88
+          why_it_works: "us vs them framing + hidden information creates urgency to watch"
+        - text: "i make money using only free ai tools. here are the 5."
+          type: "personal_story"
+          score: 0.81
+          why_it_works: "first-person credibility + clear numbered deliverable"
+      recommended_hook:
+        text: "i replaced my $500/month software stack with these 5 free ai tools."
+        type: "bold_claim"
+        score: 0.92

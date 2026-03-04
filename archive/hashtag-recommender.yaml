@@ -1,0 +1,157 @@
+name: hashtag-recommender
+version: "1.0.0"
+description: >
+  recommends optimal hashtags for a post using semantic embedding similarity against
+  a 50M+ hashtag corpus, competition scoring, growth velocity analysis, and niche
+  affinity. returns tiered hashtag strategy with individual scores.
+
+input_schema:
+  type: object
+  required: [post_content, platform, niche]
+  properties:
+    post_content:
+      type: string
+      description: the post text to generate hashtags for
+    platform:
+      type: string
+      enum: [instagram, twitter, tiktok, youtube, facebook]
+    niche:
+      type: string
+      description: user's content niche (fitness, tech, food, travel, etc.)
+    user_id:
+      type: string
+      format: uuid
+      description: used to personalize based on user's past hashtag performance
+    existing_hashtags:
+      type: array
+      items:
+        type: string
+      description: hashtags user already wants to use (will be scored and included)
+    strategy:
+      type: string
+      enum: [reach_max, engagement_max, balanced, niche_depth]
+      default: balanced
+    count:
+      type: integer
+      minimum: 5
+      maximum: 30
+      default: 15
+
+output_schema:
+  type: object
+  required: [hashtags, strategy_applied, confidence]
+  properties:
+    hashtags:
+      type: array
+      items:
+        type: object
+        required: [tag, tier, score]
+        properties:
+          tag:
+            type: string
+            description: hashtag without the # symbol
+          tier:
+            type: string
+            enum: [mega, mid, micro, niche]
+            description: mega=1M+ posts, mid=100K-1M, micro=10K-100K, niche=<10K
+          post_count:
+            type: integer
+            description: number of posts using this hashtag
+          score:
+            type: number
+            minimum: 0
+            maximum: 1
+            description: composite score (reach * relevance / competition)
+          growth_velocity:
+            type: string
+            enum: [surging, growing, stable, declining]
+          relevance_score:
+            type: number
+            minimum: 0
+            maximum: 1
+          competition_score:
+            type: number
+            minimum: 0
+            maximum: 1
+            description: 1.0 = maximum competition, harder to rank
+          recommended_placement:
+            type: string
+            enum: [caption, first_comment]
+    tier_distribution:
+      type: object
+      properties:
+        mega:
+          type: integer
+        mid:
+          type: integer
+        micro:
+          type: integer
+        niche:
+          type: integer
+    strategy_applied:
+      type: string
+    estimated_additional_reach:
+      type: integer
+      description: estimated additional impressions from these hashtags
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+
+examples:
+  - input:
+      post_content: "morning routine for productivity"
+      platform: "instagram"
+      niche: "personal development"
+      strategy: "balanced"
+      count: 12
+    output:
+      hashtags:
+        - tag: "productivity"
+          tier: "mega"
+          post_count: 15200000
+          score: 0.61
+          growth_velocity: "stable"
+          relevance_score: 0.96
+          competition_score: 0.89
+          recommended_placement: "first_comment"
+        - tag: "morningroutine"
+          tier: "mid"
+          post_count: 4800000
+          score: 0.74
+          growth_velocity: "growing"
+          relevance_score: 0.98
+          competition_score: 0.76
+          recommended_placement: "first_comment"
+        - tag: "personaldevelopment"
+          tier: "mid"
+          post_count: 8900000
+          score: 0.68
+          growth_velocity: "stable"
+          relevance_score: 0.95
+          competition_score: 0.82
+          recommended_placement: "first_comment"
+        - tag: "productivityhacks"
+          tier: "micro"
+          post_count: 890000
+          score: 0.81
+          growth_velocity: "surging"
+          relevance_score: 0.91
+          competition_score: 0.61
+          recommended_placement: "first_comment"
+        - tag: "5amclub"
+          tier: "micro"
+          post_count: 320000
+          score: 0.84
+          growth_velocity: "surging"
+          relevance_score: 0.88
+          competition_score: 0.52
+          recommended_placement: "first_comment"
+      tier_distribution:
+        mega: 1
+        mid: 3
+        micro: 6
+        niche: 2
+      strategy_applied: "balanced"
+      estimated_additional_reach: 8400
+      confidence: 0.91

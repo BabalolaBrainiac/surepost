@@ -1,0 +1,95 @@
+name: content-writer
+version: "2.0.0"
+description: >
+  generates complete ready-to-publish post content for any platform and format.
+  receives the hook, topic, platform, format, and affiliate instructions.
+  returns the full post — script, caption, slides, or thread — ready to go.
+
+input_schema:
+  type: object
+  required: [platform, format, topic, hook, content_goal]
+  properties:
+    platform:
+      type: string
+      enum: [tiktok, instagram, twitter]
+    format:
+      type: string
+      enum: [video_script, carousel, caption, thread, tweet, story]
+    topic:
+      type: string
+    hook:
+      type: string
+      description: the selected hook to open with
+    content_goal:
+      type: string
+      enum: [reach, saves, shares, engagement, conversions, affiliate]
+    affiliate_product:
+      type: string
+      description: product to integrate. if null, no affiliate integration
+    affiliate_cta:
+      type: string
+      description: how to present the affiliate cta
+    niche:
+      type: string
+      default: "ai x money"
+    voice_notes:
+      type: string
+      description: specific voice or style instructions
+
+output_schema:
+  type: object
+  required: [content, platform, format, confidence]
+  properties:
+    content:
+      type: object
+      description: varies by format
+      properties:
+        tiktok_script:
+          type: object
+          properties:
+            on_screen_text:
+              type: array
+              items:
+                type: object
+                properties:
+                  timestamp_seconds: { type: integer }
+                  text: { type: string }
+            spoken_words:
+              type: string
+            total_seconds:
+              type: integer
+        instagram_carousel:
+          type: object
+          properties:
+            title: { type: string }
+            slides:
+              type: array
+              items:
+                type: object
+                properties:
+                  slide_number: { type: integer }
+                  headline: { type: string }
+                  body: { type: string }
+            caption: { type: string }
+        instagram_caption:
+          type: object
+          properties:
+            text: { type: string }
+            hashtag_placeholder: { type: string }
+        twitter_thread:
+          type: object
+          properties:
+            tweets:
+              type: array
+              items:
+                type: object
+                properties:
+                  number: { type: integer }
+                  text: { type: string }
+                  char_count: { type: integer }
+    affiliate_disclosure_included:
+      type: boolean
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1

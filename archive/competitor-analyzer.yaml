@@ -1,0 +1,132 @@
+name: competitor-analyzer
+version: "1.0.0"
+description: >
+  identifies and analyzes competitor accounts in the user's niche. reveals posting
+  patterns, content strategies, hashtag usage, and engagement performance.
+  identifies gaps and opportunities the user can exploit.
+
+input_schema:
+  type: object
+  required: [user_id, platform, niche]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube]
+    niche:
+      type: string
+    user_follower_count:
+      type: integer
+      description: used to find similarly-sized competitors
+    competitor_accounts:
+      type: array
+      items:
+        type: string
+      description: optional - specific accounts to analyze (max 10)
+    analysis_type:
+      type: string
+      enum: [quick, standard, deep]
+      default: standard
+
+output_schema:
+  type: object
+  required: [competitors, gap_analysis, opportunities, confidence]
+  properties:
+    competitors:
+      type: array
+      maxItems: 10
+      items:
+        type: object
+        properties:
+          account_handle:
+            type: string
+          platform:
+            type: string
+          follower_count:
+            type: integer
+          avg_engagement_rate:
+            type: number
+          posting_frequency_per_week:
+            type: number
+          best_performing_content_type:
+            type: string
+          primary_hashtag_strategy:
+            type: string
+          peak_posting_hours:
+            type: array
+            items:
+              type: integer
+          top_performing_topics:
+            type: array
+            items:
+              type: string
+          avg_post_performance_score:
+            type: number
+    gap_analysis:
+      type: object
+      properties:
+        underserved_content_types:
+          type: array
+          items:
+            type: string
+          description: formats competitors are not using that your audience would like
+        underserved_topics:
+          type: array
+          items:
+            type: string
+          description: topics your niche audience wants that competitors miss
+        posting_frequency_gap:
+          type: string
+          description: are you over/under-posting vs competitors
+        engagement_rate_gap:
+          type: number
+          description: your engagement rate vs competitor average
+    opportunities:
+      type: array
+      items:
+        type: object
+        properties:
+          opportunity:
+            type: string
+          potential_impact:
+            type: string
+            enum: [high, medium, low]
+          how_to_execute:
+            type: string
+          competitor_weakness_exploited:
+            type: string
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+
+examples:
+  - input:
+      user_id: "550e8400-e29b-41d4-a716-446655440000"
+      platform: "instagram"
+      niche: "personal development"
+      user_follower_count: 45000
+    output:
+      competitors:
+        - account_handle: "@example_pd_creator"
+          platform: "instagram"
+          follower_count: 82000
+          avg_engagement_rate: 0.031
+          posting_frequency_per_week: 5
+          best_performing_content_type: "carousel"
+          primary_hashtag_strategy: "mid_tier_dominant"
+          peak_posting_hours: [9, 17, 20]
+          top_performing_topics: ["morning routine", "book summaries", "habit stacking"]
+      gap_analysis:
+        underserved_content_types: ["short-form video", "polls", "day-in-life stories"]
+        underserved_topics: ["evening routines", "focus techniques", "digital minimalism"]
+        posting_frequency_gap: "you post 3x/week vs competitor average 5x/week"
+        engagement_rate_gap: 0.007
+      opportunities:
+        - opportunity: "evening routine content is highly searched but almost no top creators cover it"
+          potential_impact: "high"
+          how_to_execute: "create a 7-part evening routine carousel series"
+          competitor_weakness_exploited: "all competitors focus on morning. zero own the evening slot."
+      confidence: 0.88

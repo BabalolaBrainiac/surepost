@@ -1,0 +1,128 @@
+name: trend-detector
+version: "1.0.0"
+description: >
+  detects and scores trending topics on social media platforms that are relevant
+  to a specific user's niche. identifies hijackable trends, evaluates brand safety,
+  and provides content integration suggestions.
+
+input_schema:
+  type: object
+  required: [platform, niche]
+  properties:
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube, all]
+    niche:
+      type: string
+      description: user's content niche for relevance filtering
+    user_content_profile:
+      type: object
+      description: user's content style and brand values
+      properties:
+        tone:
+          type: string
+        brand_values:
+          type: array
+          items:
+            type: string
+        avoid_topics:
+          type: array
+          items:
+            type: string
+          description: topics user wants to avoid
+    lookback_hours:
+      type: integer
+      default: 24
+      minimum: 1
+      maximum: 72
+      description: how far back to look for trends
+    max_results:
+      type: integer
+      default: 10
+      minimum: 3
+      maximum: 25
+
+output_schema:
+  type: object
+  required: [trends, platform, timestamp]
+  properties:
+    platform:
+      type: string
+    timestamp:
+      type: string
+      format: date-time
+    trends:
+      type: array
+      items:
+        type: object
+        required: [topic, relevance_score, opportunity_score, risk_score]
+        properties:
+          topic:
+            type: string
+          trend_type:
+            type: string
+            enum: [hashtag, keyword, audio, challenge, news_event, meme, seasonal]
+          relevance_score:
+            type: number
+            minimum: 0
+            maximum: 1
+            description: how relevant this trend is to user's niche
+          opportunity_score:
+            type: number
+            minimum: 0
+            maximum: 1
+            description: predicted engagement uplift from using this trend
+          risk_score:
+            type: number
+            minimum: 0
+            maximum: 1
+            description: 0 = safe, 1 = high brand risk
+          velocity:
+            type: string
+            enum: [exploding, fast_rising, rising, stable, declining]
+          estimated_peak_hours:
+            type: integer
+            description: how many hours until trend peaks
+          platform_post_volume:
+            type: integer
+          integration_suggestion:
+            type: string
+            description: how to naturally integrate this trend into content
+          brand_safe:
+            type: boolean
+    recommended_trends:
+      type: array
+      items:
+        type: string
+      description: top trend topics to integrate (relevance >= 0.7 and brand_safe)
+
+examples:
+  - input:
+      platform: "instagram"
+      niche: "personal development"
+      lookback_hours: 24
+    output:
+      platform: "instagram"
+      timestamp: "2026-03-02T13:00:00Z"
+      trends:
+        - topic: "75hard"
+          trend_type: "hashtag"
+          relevance_score: 0.91
+          opportunity_score: 0.84
+          risk_score: 0.05
+          velocity: "fast_rising"
+          estimated_peak_hours: 18
+          platform_post_volume: 48000
+          integration_suggestion: "relate your morning routine content to the 75hard mindset without directly claiming the challenge"
+          brand_safe: true
+        - topic: "manifestation2026"
+          trend_type: "hashtag"
+          relevance_score: 0.78
+          opportunity_score: 0.71
+          risk_score: 0.12
+          velocity: "rising"
+          estimated_peak_hours: 36
+          platform_post_volume: 22000
+          integration_suggestion: "frame productivity as intentional goal-setting that aligns with manifestation mindset"
+          brand_safe: true
+      recommended_trends: ["75hard", "manifestation2026"]

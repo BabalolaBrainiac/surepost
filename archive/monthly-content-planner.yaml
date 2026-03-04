@@ -1,0 +1,165 @@
+name: monthly-content-planner
+version: "1.0.0"
+description: >
+  generates a complete 30-day content calendar with ai-written posts for each day.
+  each post is optimized for the best time, platform, content type, hashtags, and
+  topic variety. considers content mix strategy, audience fatigue prevention,
+  and peak engagement timing across the whole month.
+
+input_schema:
+  type: object
+  required: [user_id, platform, month, year, profile_audit]
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    platform:
+      type: string
+      enum: [facebook, instagram, twitter, tiktok, youtube, all]
+    month:
+      type: integer
+      minimum: 1
+      maximum: 12
+    year:
+      type: integer
+    profile_audit:
+      type: object
+      description: output from social-profile-analyzer
+    competitor_insights:
+      type: object
+      description: output from competitor-analyzer (optional but improves quality)
+    trending_topics:
+      type: array
+      items:
+        type: string
+      description: upcoming trends to integrate
+    goals:
+      type: object
+      properties:
+        primary_goal:
+          type: string
+          enum: [follower_growth, engagement_rate, brand_awareness, lead_generation, sales]
+        posting_frequency_per_week:
+          type: integer
+          minimum: 1
+          maximum: 14
+          default: 5
+        content_mix:
+          type: object
+          description: desired ratio of content types
+          properties:
+            educational:
+              type: number
+            inspirational:
+              type: number
+            promotional:
+              type: number
+            entertainment:
+              type: number
+            community:
+              type: number
+    include_full_content:
+      type: boolean
+      default: true
+      description: if true, generates full post text for each day
+
+output_schema:
+  type: object
+  required: [calendar, month, year, platform, avg_confidence_score]
+  properties:
+    month:
+      type: integer
+    year:
+      type: integer
+    platform:
+      type: string
+    avg_confidence_score:
+      type: number
+    posting_days_total:
+      type: integer
+    content_mix_achieved:
+      type: object
+    calendar:
+      type: array
+      items:
+        type: object
+        required: [date, post_content, optimal_time, confidence_score]
+        properties:
+          date:
+            type: string
+            format: date
+          day_of_week:
+            type: string
+          post_content:
+            type: object
+            properties:
+              text:
+                type: string
+              format:
+                type: string
+              hook:
+                type: string
+              cta:
+                type: string
+          optimal_time:
+            type: string
+            format: date-time
+          hashtags:
+            type: array
+            items:
+              type: string
+          content_theme:
+            type: string
+          content_goal:
+            type: string
+          predicted_engagement_rate:
+            type: number
+          confidence_score:
+            type: number
+          rationale:
+            type: string
+            description: why this content was chosen for this day
+    month_strategy_summary:
+      type: string
+      description: overview of the month's content strategy and expected outcomes
+
+examples:
+  - input:
+      user_id: "550e8400-e29b-41d4-a716-446655440000"
+      platform: "instagram"
+      month: 4
+      year: 2026
+      profile_audit:
+        content_style_profile:
+          tone: "inspirational"
+          best_performing_format: "carousel"
+      goals:
+        primary_goal: "follower_growth"
+        posting_frequency_per_week: 5
+        content_mix:
+          educational: 0.40
+          inspirational: 0.30
+          entertainment: 0.20
+          promotional: 0.10
+    output:
+      month: 4
+      year: 2026
+      platform: "instagram"
+      avg_confidence_score: 0.92
+      posting_days_total: 22
+      calendar:
+        - date: "2026-04-01"
+          day_of_week: "Wednesday"
+          post_content:
+            text: "the most underrated productivity hack: doing nothing for 10 minutes after you wake up.\n\nno phone. no plans. just sit.\n\nit sounds counterintuitive but..."
+            format: "carousel"
+            hook: "the most underrated productivity hack: doing nothing"
+            cta: "save this for tomorrow morning"
+          optimal_time: "2026-04-01T17:00:00-04:00"
+          hashtags: ["productivity", "morningroutine", "mindfulness"]
+          content_theme: "counter-intuitive productivity"
+          content_goal: "engagement"
+          predicted_engagement_rate: 0.058
+          confidence_score: 0.94
+          rationale: "wednesdays at 5pm are peak engagement days. counter-intuitive hooks drive carousel saves."
+      month_strategy_summary: "april focuses on habit-building content ahead of q2 goal-setting season. weeks 1-2 establish morning routine authority, weeks 3-4 shift to productivity systems. promotional content reserved for end-of-month. expected 8-12% follower growth based on content mix and cadence."

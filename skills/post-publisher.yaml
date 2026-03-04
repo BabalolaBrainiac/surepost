@@ -1,0 +1,89 @@
+name: post-publisher
+version: "2.0.0"
+description: >
+  executes post publishing to instagram, tiktok, or twitter/x via official apis.
+  handles media upload, caption formatting, scheduling confirmation, and post id storage.
+  returns execution result with platform post id for analytics tracking.
+
+input_schema:
+  type: object
+  required: [platform, content, account_id, scheduled_time]
+  properties:
+    platform:
+      type: string
+      enum: [instagram, tiktok, twitter]
+    content:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          description: caption or tweet text
+        media_url:
+          type: string
+          description: url to media file in cloudflare r2
+        media_type:
+          type: string
+          enum: [image, video, carousel]
+        carousel_media_urls:
+          type: array
+          items:
+            type: string
+        post_type:
+          type: string
+          enum: [post, reel, story, carousel, video, tweet, thread]
+        hashtags:
+          type: array
+          items:
+            type: string
+    account_id:
+      type: string
+      format: uuid
+      description: surepost account id (used to retrieve encrypted oauth token)
+    scheduled_time:
+      type: string
+      format: date-time
+    retry_count:
+      type: integer
+      default: 0
+      maximum: 3
+
+output_schema:
+  type: object
+  required: [success, platform, executed_at]
+  properties:
+    success:
+      type: boolean
+    platform:
+      type: string
+    platform_post_id:
+      type: string
+      description: id returned by platform after successful post
+    executed_at:
+      type: string
+      format: date-time
+    error_code:
+      type: string
+    error_message:
+      type: string
+    retry_scheduled:
+      type: boolean
+    retry_at:
+      type: string
+      format: date-time
+
+examples:
+  - input:
+      platform: "tiktok"
+      content:
+        text: "5 free ai tools that pay you back #ad #aitools #makemoneyonline"
+        media_url: "https://r2.surepost.app/videos/uuid.mp4"
+        media_type: "video"
+        post_type: "video"
+      account_id: "550e8400-e29b-41d4-a716-446655440000"
+      scheduled_time: "2026-03-02T14:00:00Z"
+    output:
+      success: true
+      platform: "tiktok"
+      platform_post_id: "7123456789012345678"
+      executed_at: "2026-03-02T14:00:03Z"

@@ -1,0 +1,91 @@
+name: revenue-calculator
+version: "2.0.0"
+description: >
+  tracks and projects revenue across all active monetization streams.
+  calculates daily, weekly, and monthly revenue. projects future earnings
+  based on current follower growth trajectory and platform benchmarks.
+
+input_schema:
+  type: object
+  required: [account_metrics, active_programs]
+  properties:
+    account_metrics:
+      type: object
+      properties:
+        instagram_followers: { type: integer }
+        tiktok_followers: { type: integer }
+        twitter_followers: { type: integer }
+        avg_monthly_views_tiktok: { type: integer }
+        avg_monthly_impressions_twitter: { type: integer }
+    active_programs:
+      type: object
+      properties:
+        affiliate_clicks_7d: { type: integer }
+        affiliate_conversions_7d: { type: integer }
+        tiktok_creator_fund_active: { type: boolean }
+        x_premium_revenue_share_active: { type: boolean }
+        instagram_subscriptions_active: { type: boolean }
+        instagram_subscribers: { type: integer }
+    period:
+      type: string
+      enum: [daily, weekly, monthly]
+      default: monthly
+
+output_schema:
+  type: object
+  required: [total_estimated_revenue, breakdown, projections]
+  properties:
+    total_estimated_revenue:
+      type: object
+      properties:
+        low: { type: number }
+        mid: { type: number }
+        high: { type: number }
+    breakdown:
+      type: object
+      properties:
+        affiliate_marketing:
+          type: object
+          properties:
+            estimated: { type: number }
+            active_programs: { type: integer }
+            conversion_rate: { type: number }
+        tiktok_creator_rewards:
+          type: object
+          properties:
+            estimated: { type: number }
+            status: { type: string }
+        brand_deals:
+          type: object
+          properties:
+            estimated: { type: number }
+            current_rate_per_post: { type: number }
+        x_premium_revenue_share:
+          type: object
+          properties:
+            estimated: { type: number }
+            status: { type: string }
+        instagram_subscriptions:
+          type: object
+          properties:
+            estimated: { type: number }
+            subscriber_count: { type: integer }
+        digital_products:
+          type: object
+          properties:
+            estimated: { type: number }
+            launched: { type: boolean }
+    projections:
+      type: object
+      properties:
+        month_3: { type: number }
+        month_6: { type: number }
+        month_12: { type: number }
+    next_milestone:
+      type: object
+      properties:
+        platform: { type: string }
+        current_followers: { type: integer }
+        milestone_followers: { type: integer }
+        monetization_unlocked: { type: string }
+        estimated_weeks_to_reach: { type: number }
